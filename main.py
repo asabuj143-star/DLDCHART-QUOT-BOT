@@ -5,7 +5,9 @@ from telebot import types
 API_TOKEN = '8457629333:AAE2BiEUT9E3NNdRJhAw7AyO6ArXQOTzsWY'
 bot = telebot.TeleBot(API_TOKEN)
 
-# প্রধান মেনু ফাংশন (যাতে বারবার কল করা যায়)
+# যারা একবার বোট চালু করেছে তাদের আইডি রাখার জন্য একটি তালিকা
+known_users = set()
+
 def get_main_menu_markup():
     markup = types.InlineKeyboardMarkup(row_width=1)
     btn1 = types.InlineKeyboardButton("🔑 Activation (New User / Upgrade)", callback_data='activation')
@@ -18,36 +20,47 @@ def get_main_menu_markup():
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.send_message(message.chat.id, "Main menu:", reply_markup=get_main_menu_markup())
+    user_id = message.from_user.id
+    
+    # ইউজার যদি আগে না এসে থাকে (প্রথমবার)
+    if user_id not in known_users:
+        announcement_text = (
+            "📢 **IMPORTANT ANNOUNCEMENT** 📢\n\n"
+            "🇬🇧 **English**\n"
+            "We are accepting only 400 members for now. After that, new user registration will be completely closed for this year.\n"
+            "⌛ Don't waste time — join quickly.\n"
+            "✅ 90%+ winning accuracy\n"
+            "⚠️ 10% signals are intentionally incorrect so that Quotex cannot detect anything during withdrawals.\n"
+            "❌ I do not trade personally.\n\n"
+            "🇧🇩 **বাংলা**\n"
+            "আমরা এখন মাত্র ৪০০ জন মেম্বার নেব। এরপর এই বছরের জন্য নতুন ইউজার নেওয়া পুরোপুরি বন্ধ করে দেওয়া হবে।\n"
+            "⏳ তাই সময় নষ্ট না করে দ্রুত জয়েন করুন।\n"
+            "✅ 90%+ WIN\n"
+            "⚠️ 10% ইচ্ছাকৃতভাবে ভুল দেওয়া হয়, যেন Withdraw এর সময় Quotex বুঝতে না পারে।\n"
+            "❌ আমি নিজে ট্রেড করি না।"
+        )
+        # তাকে নোটিশটি দেখাবে
+        bot.send_message(message.chat.id, announcement_text, reply_markup=get_main_menu_markup(), parse_mode='Markdown')
+        # ইউজারের আইডি সেভ করে রাখা হচ্ছে যাতে পরের বার নোটিশ না আসে
+        known_users.add(user_id)
+    else:
+        # দ্বিতীয় বার থেকে শুধু মেইন মেনু দেখাবে
+        bot.send_message(message.chat.id, "Welcome back! Main menu:", reply_markup=get_main_menu_markup())
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     if call.data == "activation":
-        # আপনার স্ক্রিনশটের মতো টেক্সট
         activation_text = (
             "✅ Step 1: Register using our partner link:\n"
-            "https://broker-qx.pro/sign-up/?lid=1703970  "
-            "https://market-qx.pro/sign-up/?lid=1703970\n\n"
+            "https://broker-qx.pro/sign-up/?lid=1703970\n\n"
             "⏳ Wait at least 60 seconds, then send your UID here."
         )
-        
-        # Cancel বাটন
         markup = types.InlineKeyboardMarkup()
         cancel_btn = types.InlineKeyboardButton("❌ Cancel", callback_data='main_menu')
         markup.add(cancel_btn)
-        
-        # মেসেজ এডিট করে অ্যাক্টিভেশন টেক্সট দেখানো
-        bot.edit_message_text(chat_id=call.message.chat.id, 
-                              message_id=call.message.message_id, 
-                              text=activation_text, 
-                              reply_markup=markup, 
-                              disable_web_page_preview=False)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=activation_text, reply_markup=markup)
     
     elif call.data == "main_menu":
-        # Cancel চাপলে মেসেজটি আবার মেইন মেনুতে ফিরে যাবে
-        bot.edit_message_text(chat_id=call.message.chat.id, 
-                              message_id=call.message.message_id, 
-                              text="Main menu:", 
-                              reply_markup=get_main_menu_markup())
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Main menu:", reply_markup=get_main_menu_markup())
 
 bot.polling()
