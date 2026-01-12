@@ -5,7 +5,10 @@ from telebot import types
 API_TOKEN = '8457629333:AAE2BiEUT9E3NNdRJhAw7AyO6ArXQOTzsWY'
 bot = telebot.TeleBot(API_TOKEN)
 
-# যারা একবার বোট চালু করেছে তাদের আইডি রাখার জন্য একটি তালিকা
+# আপনার নিজের টেলিগ্রাম আইডি (এখানে আপনার আইডি দিন, যা @userinfobot থেকে পাবেন)
+ADMIN_ID = 123456789  # উদাহরণ হিসেবে দেওয়া, আপনার আইডিটি এখানে লিখুন
+
+# ইউজারদের আইডি সেভ করার জন্য একটি সেট (মেমোরিতে থাকবে)
 known_users = set()
 
 def get_main_menu_markup():
@@ -22,39 +25,34 @@ def get_main_menu_markup():
 def send_welcome(message):
     user_id = message.from_user.id
     
-    # ইউজার যদি আগে না এসে থাকে (প্রথমবার)
     if user_id not in known_users:
+        # প্রথমবার আসলে নোটিশ দেখাবে
         announcement_text = (
             "📢 **IMPORTANT ANNOUNCEMENT** 📢\n\n"
             "🇬🇧 **English**\n"
-            "We are accepting only 400 members for now. After that, new user registration will be completely closed for this year.\n"
-            "⌛ Don't waste time — join quickly.\n"
-            "✅ 90%+ winning accuracy\n"
-            "⚠️ 10% signals are intentionally incorrect so that Quotex cannot detect anything during withdrawals.\n"
-            "❌ I do not trade personally.\n\n"
+            "We are accepting only 400 members for now...\n\n"
             "🇧🇩 **বাংলা**\n"
-            "আমরা এখন মাত্র ৪০০ জন মেম্বার নেব। এরপর এই বছরের জন্য নতুন ইউজার নেওয়া পুরোপুরি বন্ধ করে দেওয়া হবে।\n"
-            "⏳ তাই সময় নষ্ট না করে দ্রুত জয়েন করুন।\n"
-            "✅ 90%+ WIN\n"
-            "⚠️ 10% ইচ্ছাকৃতভাবে ভুল দেওয়া হয়, যেন Withdraw এর সময় Quotex বুঝতে না পারে।\n"
-            "❌ আমি নিজে ট্রেড করি না।"
+            "আমরা এখন মাত্র ৪০০ জন মেম্বার নেব।"
         )
-        # তাকে নোটিশটি দেখাবে
         bot.send_message(message.chat.id, announcement_text, reply_markup=get_main_menu_markup(), parse_mode='Markdown')
-        # ইউজারের আইডি সেভ করে রাখা হচ্ছে যাতে পরের বার নোটিশ না আসে
-        known_users.add(user_id)
+        known_users.add(user_id) # নতুন ইউজারকে লিস্টে যোগ করা হলো
     else:
-        # দ্বিতীয় বার থেকে শুধু মেইন মেনু দেখাবে
         bot.send_message(message.chat.id, "Welcome back! Main menu:", reply_markup=get_main_menu_markup())
+
+# শুধুমাত্র আপনার জন্য স্ট্যাটিসটিকস দেখার কমান্ড
+@bot.message_handler(commands=['stats'])
+def show_stats(message):
+    # কোডটি চেক করবে আপনিই এডমিন কি না
+    if message.from_user.id == ADMIN_ID:
+        total_users = len(known_users)
+        bot.reply_to(message, f"📊 বোটের বর্তমান মোট ইউজার সংখ্যা: {total_users}")
+    else:
+        bot.reply_to(message, "দুঃখিত, এই কমান্ডটি শুধুমাত্র এডমিনের জন্য।")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     if call.data == "activation":
-        activation_text = (
-            "✅ Step 1: Register using our partner link:\n"
-            "https://broker-qx.pro/sign-up/?lid=1703970\n\n"
-            "⏳ Wait at least 60 seconds, then send your UID here."
-        )
+        activation_text = "✅ Step 1: Register using our link...\n"
         markup = types.InlineKeyboardMarkup()
         cancel_btn = types.InlineKeyboardButton("❌ Cancel", callback_data='main_menu')
         markup.add(cancel_btn)
